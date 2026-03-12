@@ -7,6 +7,11 @@ const fetch = require('node-fetch')
 const React = require('react')
 const ReactDOMServer = require('react-dom/server')
 require('dotenv').config();
+//AI: "Enable Babel at runtime so Node can load .jsx view files with normal JSX syntax and fragments."
+require("@babel/register")({
+    extensions: [".jsx"],
+    presets: [["@babel/preset-react", { runtime: "classic" }]]
+});
 
 //express server creation
 
@@ -17,9 +22,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 //set template engine
-//AI: "Treat .jsx files like standard CommonJS modules so Express can require them directly."
-require.extensions[".jsx"] = require.extensions[".js"];
-
 //AI: "Register a custom Express view engine that server-renders React components from .jsx view files."
 app.engine("jsx", (filePath, options, callback) => {
     try {
