@@ -6,7 +6,8 @@ const { Frame,
     Window,
     WindowContent,
     WindowHeader,
-    Toolbar
+    Toolbar,
+    TextInput,
  } = require("react95");
 const original = require("react95/dist/themes/original");
 // import ms_sans_serif from 'react95/dist/fonts/ms_sans_serif.woff2';
@@ -17,9 +18,10 @@ const GlobalStyles = createGlobalStyle`
     ${styleReset}
 
     body {
+        display: block;
         font-family: "ms_sans_serif", sans-serif;
         background: ${({ theme }) => theme.desktopBackground};
-        margin: 0;
+        margin: 0 auto;
         padding: 16px;
     }
     .close-icon {
@@ -50,17 +52,48 @@ const GlobalStyles = createGlobalStyle`
         transform: translateY(-50%);
         }
     }
-      .window {
-    width: 400px;
-    min-height: 200px;
+    .window {
+        max-width: 600px;
+        min-width:200px;
+        width: 100%;
+        min-height: 200px;
   }
     .window-header{
     display: flex;
     align-items: center;
     justify-content: space-between;
     }
+    .inputFrame{
+
+    width: 100%;
+    }
+
+    #form{
+    display: flex;
+    }
+
+    .windowWrapper{
+        display: flex;
+        justify-content:center;
+        width:100%;
+    }
 `;
 
+
+function songResult(success, songTitle, songLink){
+    if (success != "undefined" && success){
+        return <>
+            <div className="success">
+                <p>{songTitle}</p>
+                <a href={songLink}> <Button id="download-btn">Download</Button></a>
+            </div>
+        </>
+    }else if( success != "undefined" && !success){
+       return <>
+        <Frame></Frame>
+       </> 
+    }
+}
 
 //AI: "This React component is the page that Express renders when res.render('index') is called."
 function Index() {
@@ -79,36 +112,52 @@ function Index() {
                     {/*AI: "Use a fragment here so you can freely add multiple sibling elements without an extra wrapper."*/}
                     <main>
                         <>
-                            <h1>hello</h1>
-                            <Frame style={{ marginBottom: "16px", padding: "12px" }}>
-                                hlolol
-                                <Button style={{ marginLeft: "12px" }}>default</Button>
-                            </Frame>
-                        </>
-                    </main>
-                    <h2>world</h2>
+                          <div className="windowWrapper">
+
 
                     <Window resizable className="window">
                         <WindowHeader className="window-header">
-                            TEST
+                            Youtube to MP3 Converter
 
                             <Button><span className="close-icon"></span></Button>
                         </WindowHeader>
                         <WindowContent>
-                            <Toolbar>
-                                <Button variant="menu">File</Button>
-                                <Button variant="menu">File</Button>
-                                <Button variant="menu">File</Button>
-                                <Button variant="menu">File</Button>
-                            </Toolbar>
+                            
+                            <Frame className="inputFrame">
 
-                            <Button >File</Button>
+                            <form  action="convert-mp3" method="POST" id="form">
+                                <TextInput fullWidth>
+
+                                </TextInput>
+                                <Button id="convert-btn">Convert</Button>
+                            </form>
+
+                            
+
+                            </Frame>
+
+                            <div>
+                               
+                            </div>
+
+                            <Frame>
+
+                                
+
+                            </Frame>
+
                         </WindowContent>
                     </Window>
 
+            
+                          </div>
 
 
-                </ThemeProvider>
+
+                        </>
+                    </main>
+
+                        </ThemeProvider>
             </body>
         </html>
     );
