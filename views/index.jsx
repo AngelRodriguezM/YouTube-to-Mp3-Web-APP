@@ -17,8 +17,13 @@ const original = require("react95/dist/themes/original");
 const GlobalStyles = createGlobalStyle`
     ${styleReset}
 
+    *{
+    font-family: "ms_sans_serif", sans-serif;
+    }
+
     body {
         display: block;
+        justify-content:center;
         font-family: "ms_sans_serif", sans-serif;
         background: ${({ theme }) => theme.desktopBackground};
         margin: 0 auto;
@@ -73,30 +78,52 @@ const GlobalStyles = createGlobalStyle`
     }
 
     .windowWrapper{
-        display: flex;
-        justify-content:center;
+        display: grid;
+        gap: 35px;
+        grid-template-columns: repeat(1, 1fr);
+        justify-items:center;
         width:100%;
     }
 `;
 
 
-function songResult(success, songTitle, songLink){
-    if (success != "undefined" && success){
-        return <>
-            <div className="success">
-                <p>{songTitle}</p>
-                <a href={songLink}> <Button id="download-btn">Download</Button></a>
-            </div>
-        </>
-    }else if( success != "undefined" && !success){
-       return <>
-        <Frame></Frame>
-       </> 
+//AI: "Render the success or error window from props instead of calling a helper with out-of-scope variables inline."
+function SongResult({ success, songTitle, songLink, errorMessage }) {
+    //AI: "Skip rendering the result box on the first page load before any form submission happens."
+    if (typeof success === "undefined" || success === null) {
+        return null;
     }
+
+    if (success) {
+        return (
+            <Window className="success">
+                <WindowHeader>Success!</WindowHeader>
+                <WindowContent className="success">
+                    <p>{songTitle}</p>
+                    <a href={songLink}> <Button id="download-btn">Download</Button></a>
+                </WindowContent>
+            </Window>
+        );
+    }
+
+    return (
+        <Window className="errors">
+            <WindowHeader>ALERT!</WindowHeader>
+            <WindowContent>
+                <p>{errorMessage}</p>
+            </WindowContent>
+        </Window>
+    );
 }
 
 //AI: "This React component is the page that Express renders when res.render('index') is called."
-function Index() {
+function Index({
+    //AI: "Accept render props from Express so the page can show validation errors or a successful download result."
+    success,
+    songTitle = "",
+    songLink = "",
+    errorMessage = "",
+}) {
     return (
         <html lang="en">
             <head>
@@ -125,32 +152,37 @@ function Index() {
                             
                             <Frame className="inputFrame">
 
-                            <form  action="convert-mp3" method="POST" id="form">
-                                <TextInput fullWidth>
+                            {/*AI: "Post to the Express route using the same field name the backend reads: videoId."*/}
+                            <form  action="/convert-mp3" method="POST" id="form">
+                                <TextInput fullWidth name="videoId" placeholder="Video ID ">
 
                                 </TextInput>
-                                <Button id="convert-btn">Convert</Button>
+                                <Button id="convert-btn" type="submit">Convert</Button>
                             </form>
 
                             
 
                             </Frame>
 
-                            <div>
-                               
-                            </div>
 
-                            <Frame>
-
-                                
-
-                            </Frame>
 
                         </WindowContent>
                     </Window>
 
+                        <div>
+                            {/*AI: "Render the result window as a normal React component fed by Express props."*/}
+                            <SongResult
+                                success={success}
+                                songTitle={songTitle}
+                                songLink={songLink}
+                                errorMessage={errorMessage}
+                            />
+                        </div>
+
+
+
             
-                          </div>
+                        </div>
 
 
 

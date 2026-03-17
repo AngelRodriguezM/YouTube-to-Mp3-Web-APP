@@ -61,12 +61,45 @@ app.use(express.urlencoded({
 }))
 app.use(express.json());
 
+//AI: "Render the page with default props so the React view has a stable shape on first load."
 app.get("/", (req, res) => {
-    res.render("index")
-})
-app.post("/", (req, res) => {
-    
-})
+    res.render("index", {
+        success: null,
+        songTitle: "",
+        songLink: "",
+        errorMessage: ""
+    });
+});
+
+app.post("/convert-mp3", async (req, res) => {
+    //AI: "Read the form field using videoId so it matches the React form input name."
+    const videoId = req.body.videoId;
+    //AI: "Log the parsed body while debugging so you can confirm the POST payload is reaching Express."
+    console.log(req.body);
+    console.log(videoId);
+
+    if (
+        videoId === undefined ||
+        videoId === "" ||
+        videoId === null
+    ) {
+        //AI: "Send the same props shape back to the React view when validation fails so the error window can render safely."
+        return res.render("index", {
+            success: false,
+            songTitle: "",
+            songLink: "",
+            errorMessage: "Please enter a video link"
+        });
+    }
+
+    //AI: "Render the page again on a valid submit so the browser gets a complete response instead of hanging."
+    return res.render("index", {
+        success: true,
+        songTitle: `Received video: ${videoId}`,
+        songLink: "#",
+        errorMessage: ""
+    });
+});
 
 //START SERVER
 
