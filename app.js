@@ -90,15 +90,32 @@ app.post("/convert-mp3", async (req, res) => {
             songLink: "",
             errorMessage: "Please enter a video link"
         });
+        
+    }else{
+        const fetchAPI = await fetch(`https://youtube-mp36.p.rapidapi.com/dl?id=UxxajLWwzqY?id=${videoId}`,{
+            "method": "GET",
+            "headers": {
+                "x-rapidapi-key" : process.env.API_KEY,
+                "x-rapidapi-host": process.env.API_HOST
+
+            }
+        } );
+
+        const fetchResponse = await fetchAPI.json()
+
+        if(fetchResponse.status === "ok")
+            return res.render("index", {success : tru, songTitle: fetchResponse.title, songLink: fetchResponse.link});
+        else
+            return res.render("index", {success: false, errorMessage: fetchResponse.msg})
     }
 
-    //AI: "Render the page again on a valid submit so the browser gets a complete response instead of hanging."
-    return res.render("index", {
-        success: true,
-        songTitle: `Received video: ${videoId}`,
-        songLink: "#",
-        errorMessage: ""
-    });
+    // //AI: "Render the page again on a valid submit so the browser gets a complete response instead of hanging."
+    // return res.render("index", {
+    //     success: true,
+    //     songTitle: `Received video: ${videoId}`,
+    //     songLink: "#",
+    //     errorMessage: ""
+    // });
 });
 
 //START SERVER
