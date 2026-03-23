@@ -108,13 +108,18 @@ function SongResult({ success, songTitle, songLink, errorMessage }) {
 
     return (
         <Window className="errors">
-            <WindowHeader>ALERT!</WindowHeader>
+            <WindowHeader className="window-header">ALERT!
+                <form action="/closeAlert" method="POST">
+                    <Button id="closeAlertBtn" type="submit" name="closeAlert"><span className="close-icon"></span></Button>
+                </form>
+            </WindowHeader>
             <WindowContent>
                 <p>{errorMessage}</p>
             </WindowContent>
         </Window>
     );
 }
+
 
 //AI: "This React component is the page that Express renders when res.render('index') is called."
 function Index({
