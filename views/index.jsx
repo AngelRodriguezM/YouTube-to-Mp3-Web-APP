@@ -87,20 +87,31 @@ const GlobalStyles = createGlobalStyle`
 `;
 
 
-//AI: "Render the success or error window from props instead of calling a helper with out-of-scope variables inline."
-function SongResult({ success, songTitle, songLink, errorMessage }) {
+//AI: "Render the result window from props so success, processing, and errors each show the right message."
+function SongResult({ status, songTitle, songLink, message }) {
     //AI: "Skip rendering the result box on the first page load before any form submission happens."
-    if (typeof success === "undefined" || success === null) {
+    if (typeof status === "undefined" || status === "idle") {
         return null;
     }
 
-    if (success) {
+    if (status === "success") {
         return (
             <Window className="success">
                 <WindowHeader>Success!</WindowHeader>
                 <WindowContent className="success">
                     <p>{songTitle}</p>
                     <a href={songLink}> <Button id="download-btn">Download</Button></a>
+                </WindowContent>
+            </Window>
+        );
+    }
+
+    if (status === "processing") {
+        return (
+            <Window className="processing">
+                <WindowHeader>Processing...</WindowHeader>
+                <WindowContent>
+                    <p>{message}</p>
                 </WindowContent>
             </Window>
         );
@@ -114,7 +125,7 @@ function SongResult({ success, songTitle, songLink, errorMessage }) {
                 </form>
             </WindowHeader>
             <WindowContent>
-                <p>{errorMessage}</p>
+                <p>{message}</p>
             </WindowContent>
         </Window>
     );
@@ -124,10 +135,10 @@ function SongResult({ success, songTitle, songLink, errorMessage }) {
 //AI: "This React component is the page that Express renders when res.render('index') is called."
 function Index({
     //AI: "Accept render props from Express so the page can show validation errors or a successful download result."
-    success,
+    status = "idle",
     songTitle = "",
     songLink = "",
-    errorMessage = "",
+    message = "",
 }) {
     return (
         <html lang="en">
@@ -159,7 +170,7 @@ function Index({
 
                             {/*AI: "Post to the Express route using the same field name the backend reads: videoId."*/}
                             <form  action="/convert-mp3" method="POST" id="form">
-                                <TextInput fullWidth name="videoId" placeholder="Video ID ">
+                                <TextInput fullWidth name="videoId" placeholder="YouTube URL or Video ID">
 
                                 </TextInput>
                                 <Button id="convert-btn" type="submit">Convert</Button>
@@ -177,10 +188,10 @@ function Index({
                         <div>
                             {/*AI: "Render the result window as a normal React component fed by Express props."*/}
                             <SongResult
-                                success={success}
+                                status={status}
                                 songTitle={songTitle}
                                 songLink={songLink}
-                                errorMessage={errorMessage}
+                                message={message}
                             />
                         </div>
 
