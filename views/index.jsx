@@ -9,6 +9,7 @@ const { Frame,
     Toolbar,
     TextInput,
  } = require("react95");
+const iconImage = "/IMAGES/CDiconWindows95.png";
 const original = require("react95/dist/themes/original");
 // import ms_sans_serif from 'react95/dist/fonts/ms_sans_serif.woff2';
 // import ms_sans_serif_bold from 'react95/dist/fonts/ms_sans_serif_bold.woff2';
@@ -147,6 +148,7 @@ function Index({
                 <meta charSet="UTF-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <title>YouTube to MP3</title>
+                <link rel="icon" href={iconImage} type="image/png" />
                 <link rel="stylesheet" href="/css/styles.css" />
             </head>
             <body>

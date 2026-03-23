@@ -53,6 +53,7 @@ app.engine("jsx", (filePath, options, callback) => {
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jsx");
 app.use(express.static("public"));
+app.use("/IMAGES", express.static(path.join(__dirname, "IMAGES")));
 
 //needed to parse html data for POST request
 
