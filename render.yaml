@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: youtube-to-mp3-web-app
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: API_KEY
+        sync: false
+      - key: API_HOST
+        value: youtube-mp36.p.rapidapi.com

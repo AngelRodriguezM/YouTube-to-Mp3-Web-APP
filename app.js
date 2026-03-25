@@ -74,6 +74,7 @@ const THEME_NAME = {
     TOKYO_DARK: "tokyo-dark"
 };
 const PROCESSING_RETRY_DELAY_MS = 1000;
+const REQUIRED_ENV_VARS = ["API_KEY", "API_HOST"];
 
 function isSupportedYouTubeHost(hostname) {
     return hostname === "youtube.com" ||
@@ -134,6 +135,14 @@ function isProcessingResponse(fetchResponse) {
         fetchResponse.status.toLowerCase() === RESULT_STATUS.PROCESSING;
 }
 
+function getMissingRequiredEnvVars() {
+    return REQUIRED_ENV_VARS.filter((envVarName) => {
+        const envValue = process.env[envVarName];
+
+        return typeof envValue !== "string" || envValue.trim() === "";
+    });
+}
+
 function normalizeThemeName(themeName) {
     return themeName === THEME_NAME.TOKYO_DARK
         ? THEME_NAME.TOKYO_DARK
@@ -191,6 +200,15 @@ function renderIndex(res, overrides = {}) {
     });
 }
 
+app.get("/healthz", (req, res) => {
+    const missingEnvVars = getMissingRequiredEnvVars();
+
+    return res.status(missingEnvVars.length === 0 ? 200 : 500).json({
+        status: missingEnvVars.length === 0 ? "ok" : "misconfigured",
+        missingEnvVars
+    });
+});
+
 //AI: "Render the page with default props so the React view has a stable shape on first load."
 app.get("/", (req, res) => {
     renderIndex(res, {
@@ -204,6 +222,17 @@ app.post("/convert-mp3", async (req, res) => {
     const normalizedInput = typeof videoInput === "string" ? videoInput.trim() : videoInput;
     const videoId = extractVideoId(videoInput);
     const themeName = getThemeNameFromRequest(req);
+    const missingEnvVars = getMissingRequiredEnvVars();
+
+    if (missingEnvVars.length > 0) {
+        console.error(`Missing required environment variables: ${missingEnvVars.join(", ")}`);
+
+        return renderIndex(res, {
+            status: RESULT_STATUS.ERROR,
+            message: "The server is missing API configuration. Set API_KEY and API_HOST before deploying.",
+            themeName
+        });
+    }
 
     if (
         normalizedInput === undefined ||
