@@ -6,6 +6,9 @@ const { Frame,
     Window,
     WindowContent,
     WindowHeader,
+    AppBar,
+    Hourglass,
+    Avatar,
     Toolbar,
     TextInput,
  } = require("react95");
@@ -89,7 +92,7 @@ const GlobalStyles = createGlobalStyle`
 
 
 //AI: "Render the result window from props so success, processing, and errors each show the right message."
-function SongResult({ status, songTitle, songLink, message }) {
+function SongResult({ status, songTitle, songLink, message, retryVideoId }) {
     //AI: "Skip rendering the result box on the first page load before any form submission happens."
     if (typeof status === "undefined" || status === "idle") {
         return null;
@@ -113,6 +116,11 @@ function SongResult({ status, songTitle, songLink, message }) {
                 <WindowHeader>Processing...</WindowHeader>
                 <WindowContent>
                     <p>{message}</p>
+                    <p>Retrying automatically...</p>
+                    <Hourglass/>
+                    <form action="/convert-mp3" method="POST" id="processing-form">
+                        <input type="hidden" name="videoId" value={retryVideoId} />
+                    </form>
                 </WindowContent>
             </Window>
         );
@@ -140,7 +148,11 @@ function Index({
     songTitle = "",
     songLink = "",
     message = "",
+    retryVideoId = "",
+    retryDelayMs = 1000,
 }) {
+    const shouldRetryProcessing = status === "processing" && retryVideoId;
+
     return (
         <html lang="en">
             <head>
@@ -156,6 +168,25 @@ function Index({
                 <meta name="apple-mobile-web-app-title" content="MyWebSite" />
                 <link rel="manifest" href="/favicon/site.webmanifest" />
                 <link rel="stylesheet" href="/css/styles.css" />
+                {shouldRetryProcessing ? (
+                    <script
+                        dangerouslySetInnerHTML={{
+                            __html: `
+                                window.addEventListener("load", function () {
+                                    var retryForm = document.getElementById("processing-form");
+
+                                    if (!retryForm) {
+                                        return;
+                                    }
+
+                                    window.setTimeout(function () {
+                                        retryForm.submit();
+                                    }, ${retryDelayMs});
+                                });
+                            `
+                        }}
+                    />
+                ) : null}
             </head>
             <body>
                 <ThemeProvider theme={original}>
@@ -200,6 +231,7 @@ function Index({
                                 songTitle={songTitle}
                                 songLink={songLink}
                                 message={message}
+                                retryVideoId={retryVideoId}
                             />
                         </div>
 

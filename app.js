@@ -69,8 +69,7 @@ const RESULT_STATUS = {
     ERROR: "error",
     PROCESSING: "processing"
 };
-const MAX_PROCESSING_RETRIES = 3;
-const PROCESSING_RETRY_DELAY_MS = 2000;
+const PROCESSING_RETRY_DELAY_MS = 1000;
 
 function isSupportedYouTubeHost(hostname) {
     return hostname === "youtube.com" ||
@@ -126,12 +125,6 @@ function extractVideoId(input) {
     return null;
 }
 
-function sleep(ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
-
 function isProcessingResponse(fetchResponse) {
     return typeof fetchResponse?.status === "string" &&
         fetchResponse.status.toLowerCase() === RESULT_STATUS.PROCESSING;
@@ -149,30 +142,14 @@ async function requestMp3Conversion(videoId) {
     return fetchAPI.json();
 }
 
-async function requestMp3ConversionUntilReady(videoId) {
-    let fetchResponse = null;
-
-    for (let attempt = 0; attempt <= MAX_PROCESSING_RETRIES; attempt += 1) {
-        fetchResponse = await requestMp3Conversion(videoId);
-
-        if (!isProcessingResponse(fetchResponse)) {
-            return fetchResponse;
-        }
-
-        if (attempt < MAX_PROCESSING_RETRIES) {
-            await sleep(PROCESSING_RETRY_DELAY_MS);
-        }
-    }
-
-    return fetchResponse;
-}
-
 function renderIndex(res, overrides = {}) {
     return res.render("index", {
         status: RESULT_STATUS.IDLE,
         songTitle: "",
         songLink: "",
         message: "",
+        retryVideoId: "",
+        retryDelayMs: PROCESSING_RETRY_DELAY_MS,
         ...overrides
     });
 }
@@ -187,10 +164,6 @@ app.post("/convert-mp3", async (req, res) => {
     const videoInput = req.body.videoId;
     const normalizedInput = typeof videoInput === "string" ? videoInput.trim() : videoInput;
     const videoId = extractVideoId(videoInput);
-    //AI: "Log the parsed body while debugging so you can confirm the POST payload is reaching Express."
-    console.log(req.body);
-    console.log(videoInput);
-    console.log(videoId);
 
     if (
         normalizedInput === undefined ||
@@ -212,9 +185,12 @@ app.post("/convert-mp3", async (req, res) => {
     }
 
     try {
-        const fetchResponse = await requestMp3ConversionUntilReady(videoId);
+        const fetchResponse = await requestMp3Conversion(videoId);
+        const apiStatus = typeof fetchResponse?.status === "string"
+            ? fetchResponse.status.toLowerCase()
+            : "";
 
-        if (fetchResponse.status === "ok") {
+        if (apiStatus === "ok") {
             return renderIndex(res, {
                 status: RESULT_STATUS.SUCCESS,
                 songTitle: fetchResponse.title,
@@ -225,7 +201,8 @@ app.post("/convert-mp3", async (req, res) => {
         if (isProcessingResponse(fetchResponse)) {
             return renderIndex(res, {
                 status: RESULT_STATUS.PROCESSING,
-                message: fetchResponse.msg || "The API is still processing this video. Please wait a few seconds and try again."
+                message: fetchResponse.msg || "The API is still processing this video. Retrying automatically...",
+                retryVideoId: videoId
             });
         }
 
