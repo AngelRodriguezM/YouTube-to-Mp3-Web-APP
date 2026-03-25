@@ -69,6 +69,10 @@ const RESULT_STATUS = {
     ERROR: "error",
     PROCESSING: "processing"
 };
+const THEME_NAME = {
+    ORIGINAL: "original",
+    TOKYO_DARK: "tokyo-dark"
+};
 const PROCESSING_RETRY_DELAY_MS = 1000;
 
 function isSupportedYouTubeHost(hostname) {
@@ -130,6 +134,38 @@ function isProcessingResponse(fetchResponse) {
         fetchResponse.status.toLowerCase() === RESULT_STATUS.PROCESSING;
 }
 
+function normalizeThemeName(themeName) {
+    return themeName === THEME_NAME.TOKYO_DARK
+        ? THEME_NAME.TOKYO_DARK
+        : THEME_NAME.ORIGINAL;
+}
+
+function getThemeNameFromRequest(req) {
+    return normalizeThemeName(req.body?.theme || req.query?.theme);
+}
+
+function getNextThemeName(themeName) {
+    return themeName === THEME_NAME.TOKYO_DARK
+        ? THEME_NAME.ORIGINAL
+        : THEME_NAME.TOKYO_DARK;
+}
+
+function normalizeResultStatus(status) {
+    return Object.values(RESULT_STATUS).includes(status)
+        ? status
+        : RESULT_STATUS.IDLE;
+}
+
+function getIndexStateFromRequest(req) {
+    return {
+        status: normalizeResultStatus(req.body?.status),
+        songTitle: typeof req.body?.songTitle === "string" ? req.body.songTitle : "",
+        songLink: typeof req.body?.songLink === "string" ? req.body.songLink : "",
+        message: typeof req.body?.message === "string" ? req.body.message : "",
+        retryVideoId: typeof req.body?.retryVideoId === "string" ? req.body.retryVideoId : ""
+    };
+}
+
 async function requestMp3Conversion(videoId) {
     const fetchAPI = await fetch(`https://youtube-mp36.p.rapidapi.com/dl?id=${encodeURIComponent(videoId)}`, {
         method: "GET",
@@ -150,13 +186,16 @@ function renderIndex(res, overrides = {}) {
         message: "",
         retryVideoId: "",
         retryDelayMs: PROCESSING_RETRY_DELAY_MS,
+        themeName: THEME_NAME.ORIGINAL,
         ...overrides
     });
 }
 
 //AI: "Render the page with default props so the React view has a stable shape on first load."
 app.get("/", (req, res) => {
-    renderIndex(res);
+    renderIndex(res, {
+        themeName: getThemeNameFromRequest(req)
+    });
 });
 
 app.post("/convert-mp3", async (req, res) => {
@@ -164,6 +203,7 @@ app.post("/convert-mp3", async (req, res) => {
     const videoInput = req.body.videoId;
     const normalizedInput = typeof videoInput === "string" ? videoInput.trim() : videoInput;
     const videoId = extractVideoId(videoInput);
+    const themeName = getThemeNameFromRequest(req);
 
     if (
         normalizedInput === undefined ||
@@ -173,14 +213,16 @@ app.post("/convert-mp3", async (req, res) => {
         //AI: "Send the same props shape back to the React view when validation fails so the error window can render safely."
         return renderIndex(res, {
             status: RESULT_STATUS.ERROR,
-            message: "Please enter a video link"
+            message: "Please enter a video link",
+            themeName
         });
     }
 
     if (!videoId) {
         return renderIndex(res, {
             status: RESULT_STATUS.ERROR,
-            message: "Please enter a valid YouTube URL or video ID"
+            message: "Please enter a valid YouTube URL or video ID",
+            themeName
         });
     }
 
@@ -194,7 +236,8 @@ app.post("/convert-mp3", async (req, res) => {
             return renderIndex(res, {
                 status: RESULT_STATUS.SUCCESS,
                 songTitle: fetchResponse.title,
-                songLink: fetchResponse.link
+                songLink: fetchResponse.link,
+                themeName
             });
         }
 
@@ -202,19 +245,22 @@ app.post("/convert-mp3", async (req, res) => {
             return renderIndex(res, {
                 status: RESULT_STATUS.PROCESSING,
                 message: fetchResponse.msg || "The API is still processing this video. Retrying automatically...",
-                retryVideoId: videoId
+                retryVideoId: videoId,
+                themeName
             });
         }
 
         return renderIndex(res, {
             status: RESULT_STATUS.ERROR,
-            message: fetchResponse.msg || "Could not convert that video"
+            message: fetchResponse.msg || "Could not convert that video",
+            themeName
         });
     } catch (error) {
         console.error(error);
         return renderIndex(res, {
             status: RESULT_STATUS.ERROR,
-            message: "The converter API could not be reached"
+            message: "The converter API could not be reached",
+            themeName
         });
     }
 
@@ -226,12 +272,19 @@ app.post("/convert-mp3", async (req, res) => {
     //     errorMessage: ""
     // });
 });
+
+app.post("/toggle-theme", (req, res) => {
+    return renderIndex(res, {
+        ...getIndexStateFromRequest(req),
+        themeName: getNextThemeName(getThemeNameFromRequest(req))
+    });
+});
+
 //close alert button functionality
 app.post("/closeAlert", async (req, res) => {
-
-    console.log(req.method)
-
-    renderIndex(res);
+    renderIndex(res, {
+        themeName: getThemeNameFromRequest(req)
+    });
 })
 
 //START SERVER

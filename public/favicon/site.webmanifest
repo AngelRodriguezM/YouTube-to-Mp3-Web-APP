@@ -1,6 +1,6 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "Yt to Mp3",
+  "short_name": "Yt to Mp3",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
